@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>QuizKick ⚽</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)'],['$','$']]},svg:{fontCache:'global'}};</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" defer></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body { font-family: 'Nunito', sans-serif; min-height: 100vh; overflow-x: hidden; transition: background 0.3s; }
+
+body.hub-dark {
+  --hub-bg:        #0d1117;
+  --hub-surface:   #161b22;
+  --hub-surface2:  #1c2128;
+  --hub-border:    rgba(255,255,255,0.08);
+  --hub-text:      #e6edf3;
+  --hub-muted:     #8b949e;
+  --track-bg:      #1c2128;
+  --chip-done-bg:  #0f1c12;
+  --chip-done-cl:  #4ade80;
+  --chip-retry-bg: #2a1f0a;
+  --chip-retry-cl: #f59e0b;
+  --done-card-bg:  #0e1b10;
+  --done-card-br:  rgba(39,174,96,0.22);
+  --header-curve:  #0d1117;
+  --card-shadow:   0 8px 28px rgba(0,0,0,0.4);
+  --warn-bg:       #2a0a0a;
+  --warn-border:   rgba(231,76,60,0.4);
+}
+body.hub-light {
+  --hub-bg:        #f0f7f1;
+  --hub-surface:   #ffffff;
+  --hub-surface2:  #f7faf8;
+  --hub-border:    rgba(0,0,0,0.08);
+  --hub-text:      #1a2e1d;
+  --hub-muted:     #6b8270;
+  --track-bg:      #e8f5ec;
+  --chip-done-bg:  #f0fdf4;
+  --chip-done-cl:  #1e8449;
+  --chip-retry-bg: #fff3e0;
+  --chip-retry-cl: #e67e22;
+  --done-card-bg:  #f7fdf9;
+  --done-card-br:  rgba(39,174,96,0.3);
+  --header-curve:  #f0f7f1;
+  --card-shadow:   0 8px 24px rgba(0,0,0,0.1);
+  --warn-bg:       #fff5f5;
+  --warn-border:   rgba(231,76,60,0.35);
+}
+
+:root {
+  --green:         #27ae60;
+  --green-dark:    #1e8449;
+  --green-light:   #2ecc71;
+  --green-faint:   rgba(39,174,96,0.12);
+  --gold:          #f5c518;
+  --gold-dim:      rgba(245,197,24,0.2);
+  --red-accent:    #e74c3c;
+  --orange-accent: #e67e22;
+  --r-sm:8px; --r-md:12px; --r-lg:18px; --r-xl:24px; --r-pill:100px;
+  --qz-bg:      #0d1117;
+  --qz-surface: #161b22;
+  --qz-surface2:#1c2128;
+  --qz-border:  rgba(255,255,255,0.08);
+  --qz-text:    #e6edf3;
+  --qz-muted:   #8b949e;
+}
+
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ══ HUB ══ */
+#hub-screen { background: var(--hub-bg); transition: background 0.3s; }
+
+.hub-header {
+  background: var(--green);
+  padding: 24px 20px 52px;
+  position: relative; overflow: hidden;
+}
+.hub-header::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(255,255,255,0.06) 1px, transparent 1px),
+    radial-gradient(circle at 80% 20%, rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.hub-header::after {
+  content: '';
+  position: absolute; bottom: -2px; left: 0; right: 0; height: 36px;
+  background: var(--header-curve);
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  transition: background 0.3s;
+}
+.hub-header-top {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  position: relative; z-index: 1;
+}
+.hub-logo {
+  font-family: 'Fredoka One', cursive;
+  font-size: 32px; color: #fff; letter-spacing: 1px;
+  display: flex; align-items: center; gap: 10px;
+}
+.hub-logo .ball {
+  width: 38px; height: 38px; background: #fff; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  animation: spin 8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.hub-tagline { font-size: 12px; color: rgba(255,255,255,0.75); font-weight: 600; margin-top: 3px; position: relative; z-index: 1; }
+
+.theme-toggle {
+  display: flex; align-items: center; gap: 7px;
+  background: rgba(0,0,0,0.2);
+  border: 1.5px solid rgba(255,255,255,0.3);
+  border-radius: var(--r-pill);
+  padding: 6px 12px 6px 8px;
+  cursor: pointer; font-family: 'Nunito', sans-serif;
+  font-size: 12px; font-weight: 800; color: #fff;
+  transition: background 0.2s, transform 0.12s; flex-shrink: 0; white-space: nowrap;
+}
+.theme-toggle:hover { background: rgba(0,0,0,0.3); transform: scale(1.04); }
+.theme-toggle:active { transform: scale(0.97); }
+.toggle-track {
+  width: 30px; height: 17px;
+  background: rgba(255,255,255,0.25); border-radius: var(--r-pill);
+  position: relative; border: 1px solid rgba(255,255,255,0.35);
+  transition: background 0.25s; flex-shrink: 0;
+}
+.toggle-thumb {
+  position: absolute; top: 2px; left: 2px;
+  width: 13px; height: 13px; background: #fff; border-radius: 50%;
+  transition: transform 0.22s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+body.hub-light .toggle-thumb { transform: translateX(13px); }
+body.hub-light .toggle-track { background: rgba(255,255,255,0.55); }
+.toggle-icon { font-size: 14px; line-height: 1; }
+.toggle-label { font-size: 11px; font-weight: 800; letter-spacing: 0.3px; }
+
+.progress-card {
+  margin: -22px 18px 0;
+  background: var(--hub-surface); border-radius: var(--r-xl);
+  padding: 16px 18px; box-shadow: var(--card-shadow);
+  position: relative; z-index: 2;
+  border: 1px solid var(--hub-border);
+  transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+.progress-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.progress-label { font-size: 12px; font-weight: 700; color: var(--hub-muted); letter-spacing: 0.5px; transition: color 0.3s; }
+.progress-stars { font-family: 'Fredoka One', cursive; font-size: 20px; color: var(--hub-text); transition: color 0.3s; }
+.progress-stars span { color: var(--gold); }
+.track { height: 11px; background: var(--track-bg); border-radius: var(--r-pill); overflow: hidden; position: relative; transition: background 0.3s; }
+.track-fill {
+  height: 100%; background: linear-gradient(90deg, var(--green), var(--green-light));
+  border-radius: var(--r-pill); transition: width 0.8s cubic-bezier(.4,0,.2,1); position: relative;
+}
+.track-fill::after {
+  content: ''; position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  width: 15px; height: 15px; background: var(--hub-surface);
+  border: 3px solid var(--green); border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: background 0.3s;
+}
+.track-threshold { position: absolute; left: calc(10/15*100%); top: 0; bottom: 0; width: 2px; background: var(--gold); opacity: 0.55; }
+.progress-hint { margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--hub-muted); text-align: center; transition: color 0.3s; }
+.progress-hint.good { color: var(--green); }
+
+.hub-section { padding: 18px 18px 8px; display: flex; align-items: center; justify-content: space-between; }
+.hub-section h2 { font-family: 'Fredoka One', cursive; font-size: 18px; color: var(--hub-text); letter-spacing: 0.5px; transition: color 0.3s; }
+.level-badge { font-size: 11px; font-weight: 800; background: var(--green-faint); color: var(--green); padding: 4px 10px; border-radius: var(--r-pill); letter-spacing: 0.5px; }
+
+.tests-list { padding: 0 18px 18px; display: flex; flex-direction: column; gap: 10px; }
+.test-card {
+  background: var(--hub-surface); border-radius: var(--r-lg);
+  border: 1px solid var(--hub-border); padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s, background 0.3s;
+  position: relative; overflow: hidden;
+}
+.test-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  background: var(--green); border-radius: 4px 0 0 4px;
+  opacity: 0; transition: opacity 0.18s;
+}
+.test-card:hover { transform: translateX(4px); box-shadow: 0 4px 18px rgba(0,0,0,0.15); }
+.test-card:hover::before { opacity: 1; }
+.test-card.has-score::before { opacity: 1; }
+.test-card.gold-card::before { background: var(--gold); }
+.test-card.done-card { background: var(--done-card-bg); border-color: var(--done-card-br); }
+/* Warning card for 1-star */
+.test-card.warn-card {
+  background: var(--warn-bg) !important;
+  border-color: var(--warn-border) !important;
+  animation: warnPulse 2.5s ease infinite;
+}
+.test-card.warn-card::before { background: var(--red-accent) !important; opacity: 1; }
+@keyframes warnPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(231,76,60,0); }
+  50%      { box-shadow: 0 0 0 5px rgba(231,76,60,0.18); }
+}
+.warn-badge {
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(231,76,60,0.15); border: 1px solid rgba(231,76,60,0.4);
+  color: var(--red-accent); font-size: 10px; font-weight: 800;
+  padding: 3px 8px; border-radius: var(--r-pill); margin-top: 4px;
+  letter-spacing: 0.3px; width: fit-content; animation: warnBadgePop 1.8s ease infinite;
+}
+@keyframes warnBadgePop { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+.test-icon { width: 44px; height: 44px; flex-shrink: 0; background: var(--green-faint); border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.test-card.gold-card .test-icon { background: var(--gold-dim); }
+.test-card.warn-card .test-icon { background: rgba(231,76,60,0.12); }
+.test-info { flex: 1; min-width: 0; }
+.test-num { font-size: 10px; font-weight: 800; color: var(--hub-muted); letter-spacing: 1px; text-transform: uppercase; transition: color 0.3s; }
+.test-name { font-size: 13px; font-weight: 800; color: var(--hub-text); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.3s; }
+.mini-stars { display: flex; gap: 2px; margin-top: 4px; }
+.ms { font-size: 13px; line-height: 1; }
+.test-action { flex-shrink: 0; }
+.chip { font-size: 12px; font-weight: 800; padding: 6px 13px; border-radius: var(--r-pill); border: none; cursor: pointer; font-family: 'Nunito', sans-serif; transition: transform 0.12s, opacity 0.12s; white-space: nowrap; }
+.chip:hover { transform: scale(1.05); }
+.chip:active { transform: scale(0.97); }
+.chip-play   { background: var(--green); color: #fff; }
+.chip-retry  { background: var(--chip-retry-bg); color: var(--chip-retry-cl); }
+.chip-done   { background: var(--chip-done-bg); color: var(--chip-done-cl); cursor: default; }
+.chip-done:hover { transform: none; }
+.chip-warn   { background: var(--red-accent); color: #fff; }
+
+.promo-wrap { padding: 0 18px 26px; }
+.promo-banner { background: linear-gradient(135deg, #0f2f1a 0%, #1a4a2a 100%); border-radius: var(--r-xl); padding: 16px 18px; display: flex; gap: 12px; align-items: center; }
+.promo-emoji { font-size: 30px; flex-shrink: 0; }
+.promo-text h3 { font-family: 'Fredoka One', cursive; font-size: 15px; color: #fff; letter-spacing: 0.5px; }
+.promo-text p { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 3px; line-height: 1.5; }
+.promo-text p strong { color: var(--gold); }
+
+/* ══ QUIZ (always dark) ══ */
+#quiz-screen { background: var(--qz-bg); }
+.qz-topbar { background: var(--qz-surface); border-bottom: 1px solid var(--qz-border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.qz-back { width: 36px; height: 36px; background: var(--qz-surface2); border: 1px solid var(--qz-border); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; flex-shrink: 0; color: var(--qz-muted); transition: background 0.15s; }
+.qz-back:hover { background: rgba(255,255,255,0.08); }
+.qz-meta { flex: 1; }
+.qz-title { font-family: 'Fredoka One', cursive; font-size: 17px; color: var(--qz-text); letter-spacing: 0.5px; }
+.qz-sub { font-size: 11px; color: var(--qz-muted); font-weight: 600; margin-top: 1px; }
+.timer-ring-wrap { flex-shrink: 0; position: relative; width: 52px; height: 52px; }
+.timer-ring-wrap svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.timer-circle-bg { fill: none; stroke: var(--qz-surface2); stroke-width: 3; }
+.timer-circle { fill: none; stroke: var(--green); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 138.2; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear, stroke 0.5s; }
+.timer-circle.warn   { stroke: var(--orange-accent); }
+.timer-circle.danger { stroke: var(--red-accent); }
+.timer-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.timer-val { font-family: 'Fredoka One', cursive; font-size: 13px; color: var(--qz-text); line-height: 1; }
+.timer-lbl { font-size: 8px; color: var(--qz-muted); font-weight: 800; letter-spacing: 0.5px; }
+.qz-pills { padding: 14px 20px 0; display: flex; gap: 6px; }
+.pill { flex: 1; height: 5px; background: var(--qz-surface2); border-radius: var(--r-pill); transition: background 0.3s; }
+.pill.active  { background: var(--gold); animation: pulse 1.2s ease infinite; }
+.pill.correct { background: var(--green); animation: none; }
+.pill.wrong   { background: var(--red-accent); animation: none; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.5} }
+.qz-content { flex: 1; padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+.q-card { background: var(--qz-surface); border: 1px solid var(--qz-border); border-radius: var(--r-lg); padding: 16px; }
+.q-label { font-size: 10px; font-weight: 800; color: var(--green); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.q-text  { font-size: 15px; font-weight: 600; color: var(--qz-text); line-height: 1.65; }
+.options { display: flex; flex-direction: column; gap: 8px; }
+.opt-btn {
+  background: var(--qz-surface); border: 1px solid var(--qz-border);
+  border-radius: var(--r-md); padding: 12px 14px;
+  display: flex; align-items: flex-start; gap: 12px;
+  cursor: pointer; text-align: left; font-family: 'Nunito', sans-serif;
+  color: var(--qz-text); font-size: 14px; font-weight: 600;
+  transition: border-color 0.15s, background 0.15s, transform 0.12s;
+}
+.opt-btn:hover:not(:disabled) { border-color: var(--green); background: rgba(39,174,96,0.07); transform: translateX(3px); }
+.opt-letter { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; background: var(--qz-surface2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--qz-muted); transition: background 0.15s, color 0.15s; }
+.opt-btn.selected .opt-letter { background: var(--green); color: #fff; }
+.opt-btn.selected { border-color: var(--green); background: rgba(39,174,96,0.08); }
+.opt-btn.correct  { border-color: var(--green); background: rgba(39,174,96,0.12); }
+.opt-btn.correct .opt-letter { background: var(--green); color: #fff; }
+.opt-btn.wrong    { border-color: var(--red-accent); background: rgba(231,76,60,0.1); }
+.opt-btn.wrong .opt-letter   { background: var(--red-accent); color: #fff; }
+.opt-btn:disabled { cursor: default; }
+.opt-text { flex: 1; line-height: 1.5; padding-top: 4px; }
+.qz-next { width: 100%; background: var(--green); color: #fff; border: none; border-radius: var(--r-lg); padding: 14px; font-family: 'Fredoka One', cursive; font-size: 17px; letter-spacing: 1px; cursor: pointer; display: none; transition: background 0.15s, transform 0.12s; }
+.qz-next:hover  { background: var(--green-dark); }
+.qz-next:active { transform: scale(0.98); }
+.qz-next.show   { display: block; }
+
+/* ══ RESULT (dark) ══ */
+#result-screen { background: var(--qz-bg); }
+.res-hero { background: var(--qz-surface); border-bottom: 1px solid var(--qz-border); padding: 38px 24px 28px; text-align: center; }
+.res-stars { display: flex; justify-content: center; gap: 6px; margin-bottom: 10px; }
+.big-star { font-size: 46px; animation: starBounce 0.5s ease backwards; display: inline-block; }
+.big-star.dim { filter: grayscale(1); opacity: 0.22; animation: none; }
+.big-star:nth-child(1) { animation-delay: 0.05s; }
+.big-star:nth-child(2) { animation-delay: 0.2s; }
+.big-star:nth-child(3) { animation-delay: 0.35s; }
+@keyframes starBounce { 0%{transform:scale(0) rotate(-30deg);opacity:0} 60%{transform:scale(1.25) rotate(5deg)} 100%{transform:scale(1) rotate(0);opacity:1} }
+.res-verdict { font-family: 'Fredoka One', cursive; font-size: 26px; color: var(--qz-text); letter-spacing: 1px; margin-bottom: 6px; }
+.res-time    { font-size: 13px; color: var(--qz-muted); font-weight: 600; }
+.res-body { padding: 18px; display: flex; flex-direction: column; gap: 9px; }
+.res-row { background: var(--qz-surface); border: 1px solid var(--qz-border); border-radius: var(--r-md); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+.res-row-label { font-size: 13px; color: var(--qz-muted); font-weight: 600; }
+.res-row-val   { font-size: 14px; color: var(--qz-text); font-weight: 800; }
+/* Warning box on result for 0 or 1 star */
+.res-warn-box {
+  background: rgba(231,76,60,0.1); border: 1.5px solid rgba(231,76,60,0.4);
+  border-radius: var(--r-md); padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.res-warn-box .warn-icon { font-size: 22px; flex-shrink: 0; }
+.res-warn-box .warn-msg { font-size: 13px; color: #ff8a80; font-weight: 700; line-height: 1.5; }
+.res-btns { display: flex; gap: 10px; padding: 0 18px 26px; }
+.res-btn { flex: 1; padding: 14px; border-radius: var(--r-lg); font-family: 'Fredoka One', cursive; font-size: 16px; letter-spacing: 0.5px; cursor: pointer; border: none; transition: opacity 0.15s, transform 0.12s; }
+.res-btn:hover  { opacity: 0.88; }
+.res-btn:active { transform: scale(0.97); }
+.res-btn-retry { background: var(--qz-surface2); color: var(--qz-text); border: 1px solid var(--qz-border); }
+.res-btn-hub   { background: var(--green); color: #fff; }
+
+/* ══ LEVEL UP ══ */
+#levelup-screen { background: linear-gradient(160deg, #0a1f0e 0%, #0d2e14 50%, #081a0c 100%); justify-content: center; align-items: center; text-align: center; padding: 40px 24px; }
+.levelup-trophy { font-size: 88px; animation: trophySpin 0.8s ease; display: block; margin-bottom: 14px; }
+@keyframes trophySpin { 0%{transform:scale(0)rotate(-30deg)}70%{transform:scale(1.15)rotate(5deg)}100%{transform:scale(1)rotate(0)} }
+.levelup-title { font-family: 'Fredoka One', cursive; font-size: 34px; color: var(--gold); letter-spacing: 2px; margin-bottom: 8px; }
+.levelup-sub   { font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.6; max-width: 280px; margin: 0 auto 26px; }
+.levelup-stars { font-size: 26px; margin-bottom: 18px; letter-spacing: 4px; }
+.levelup-btn { background: var(--green); color: #fff; border: none; border-radius: var(--r-pill); padding: 14px 34px; font-family: 'Fredoka One', cursive; font-size: 17px; letter-spacing: 1px; cursor: pointer; transition: background 0.15s, transform 0.12s; }
+.levelup-btn:hover  { background: var(--green-dark); }
+.levelup-btn:active { transform: scale(0.97); }
+.confetti { position: fixed; pointer-events: none; z-index: 999; }
+
+/* MathJax override for dark bg */
+mjx-container { color: var(--qz-text) !important; }
+</style>
+</head>
+<body class="hub-dark">
+
+<!-- ══ HUB ══ -->
+<div id="hub-screen" class="screen active">
+  <div class="hub-header">
+    <div class="hub-header-top">
+      <div>
+        <div class="hub-logo"><span class="ball">⚽</span> QuizKick</div>
+        <p class="hub-tagline">Score stars &bull; Beat the clock &bull; Level up!</p>
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <div class="toggle-track"><div class="toggle-thumb"></div></div>
+        <span class="toggle-icon" id="toggle-icon">☀️</span>
+        <span class="toggle-label" id="toggle-label">Light</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="progress-card">
+    <div class="progress-top">
+      <span class="progress-label">TOTAL STARS</span>
+      <span class="progress-stars"><span id="hub-star-num">0</span> / 15</span>
+    </div>
+    <div class="track">
+      <div class="track-threshold"></div>
+      <div class="track-fill" id="hub-track-fill" style="width:0%"></div>
+    </div>
+    <p class="progress-hint" id="hub-progress-hint">Earn 10 stars to advance to Level 2</p>
+  </div>
+
+  <div class="hub-section">
+    <h2>🏟️ Group Stage</h2>
+    <span class="level-badge">LEVEL 1</span>
+  </div>
+
+  <div class="tests-list" id="tests-list"></div>
+
+  <div class="promo-wrap">
+    <div class="promo-banner">
+      <span class="promo-emoji">🎯</span>
+      <div class="promo-text">
+        <h3>Score-Based Stars!</h3>
+        <p><strong>8+ correct</strong> = ⭐⭐⭐ &nbsp;·&nbsp; <strong>6–7 correct</strong> = ⭐⭐ &nbsp;·&nbsp; <strong>3–5 correct</strong> = ⭐ &nbsp;·&nbsp; <strong>0–2 correct</strong> = ✗<br>⚠️ <strong>1 star?</strong> You should retry that test!</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ QUIZ ══ -->
+<div id="quiz-screen" class="screen">
+  <div class="qz-topbar">
+    <div class="qz-back" onclick="confirmExit()">←</div>
+    <div class="qz-meta">
+      <div class="qz-title" id="qz-title">Test 1</div>
+      <div class="qz-sub" id="qz-sub">Relations &amp; Functions</div>
+    </div>
+    <div class="timer-ring-wrap">
+      <svg viewBox="0 0 52 52" width="52" height="52">
+        <circle class="timer-circle-bg" cx="26" cy="26" r="22"/>
+        <circle class="timer-circle" id="timer-circle" cx="26" cy="26" r="22"/>
+      </svg>
+      <div class="timer-text">
+        <div class="timer-val" id="timer-val">10:00</div>
+        <div class="timer-lbl">MIN</div>
+      </div>
+    </div>
+  </div>
+  <div class="qz-pills" id="qz-pills"></div>
+  <div class="qz-content">
+    <div class="q-card">
+      <div class="q-label" id="q-label">QUESTION 1 OF 10</div>
+      <div class="q-text" id="q-text">Loading...</div>
+    </div>
+    <div class="options" id="options-list"></div>
+    <button class="qz-next" id="qz-next" onclick="nextQuestion()">Next →</button>
+  </div>
+</div>
+
+<!-- ══ RESULT ══ -->
+<div id="result-screen" class="screen">
+  <div class="res-hero">
+    <div class="res-stars" id="res-stars"></div>
+    <div class="res-verdict" id="res-verdict">Well played!</div>
+    <div class="res-time" id="res-time">Completed in 3:45</div>
+  </div>
+  <div class="res-body">
+    <div class="res-row"><span class="res-row-label">Correct Answers</span><span class="res-row-val" id="res-correct">0 / 10</span></div>
+    <div class="res-row"><span class="res-row-label">Stars Earned</span><span class="res-row-val" id="res-earned">⭐⭐⭐</span></div>
+    <div class="res-row"><span class="res-row-label">Total Stars</span><span class="res-row-val" id="res-total">0 / 15</span></div>
+    <div class="res-row" style="background:rgba(39,174,96,0.06);border-color:rgba(39,174,96,0.2);">
+      <span class="res-row-label" id="res-tip">Keep going!</span>
+    </div>
+    <div class="res-warn-box" id="res-warn-box" style="display:none;">
+      <span class="warn-icon">⚠️</span>
+      <span class="warn-msg" id="res-warn-msg">You scored 1 star — this test needs more practice! Retry it to improve your score.</span>
+    </div>
+  </div>
+  <div class="res-btns">
+    <button class="res-btn res-btn-retry" onclick="retryTest()">🔄 Retry</button>
+    <button class="res-btn res-btn-hub" onclick="goHub()">🏟️ Hub</button>
+  </div>
+</div>
+
+<!-- ══ LEVEL UP ══ -->
+<div id="levelup-screen" class="screen">
+  <span class="levelup-trophy">🏆</span>
+  <div class="levelup-stars">⭐⭐⭐⭐⭐</div>
+  <div class="levelup-title">PROMOTED!</div>
+  <p class="levelup-sub">You've collected enough stars to advance to Level 2. The knockout rounds await!</p>
+  <button class="levelup-btn" onclick="goHub()">Back to Hub</button>
+</div>
+
+<script>
+/* ══ TEST DATA — 5 TESTS, CBSE CLASS 12 MATHS: RELATIONS & FUNCTIONS ══ */
+const TESTS = [
+  {
+    name: "Relations & Functions I",
+    icon: "📐",
+    questions: [
+      {
+        q: "Let \\(f: \\mathbb{R} \\rightarrow \\mathbb{R}\\) be defined by \\(f(x) = 2x + 6\\), which is a bijective mapping. Then \\(f^{-1}(x)\\) is given by:",
+        opts: ["\\(6x + 2\\)","\\(x - 3\\)","\\(2x + 6\\)","\\(\\dfrac{x}{2} - 3\\)"],
+        ans: 3
+      },
+      {
+        q: "Let \\(L\\) denote the set of all straight lines in a plane. Let a relation \\(R\\) be defined as \\(l\\,R\\,m\\) if \\(l\\) is perpendicular to \\(m\\), \\(\\forall\\, l, m \\in L\\). Then \\(R\\) is:",
+        opts: ["Reflexive","Symmetric","Transitive","Equivalence"],
+        ans: 1
+      },
+      {
+        q: "The identity element for the binary operation \\(*\\) defined on \\(\\mathbb{Q} - \\{0\\}\\) as \\(a * b = \\dfrac{ab}{2}\\) is:",
+        opts: ["\\(0\\)","\\(1\\)","\\(2\\)","None of these"],
+        ans: 2
+      },
+      {
+        q: "The relation \\(R = \\{(1,1),(2,2),(3,3),(1,2),(2,3),(1,3)\\}\\) on set \\(A = \\{1,2,3\\}\\) is:",
+        opts: ["Reflexive, transitive but not symmetric","Reflexive, symmetric but not transitive","Symmetric, transitive but not reflexive","Reflexive but neither symmetric nor transitive"],
+        ans: 0
+      },
+      {
+        q: "Which of the following functions \\(f: \\mathbb{R} \\rightarrow \\mathbb{R}\\) is one-one?",
+        opts: ["\\(f(x) = |x|\\)","\\(f(x) = x^2\\)","\\(f(x) = -x\\)","\\(f(x) = x^2 - x\\)"],
+        ans: 2
+      },
+      {
+        q: "Let \\(\\mathbb{R}\\) be the set of real numbers and \\(*\\) be the binary operation defined as \\(a * b = a + b - ab,\\; \\forall\\, a, b \\in \\mathbb{R}\\). The identity element with respect to \\(*\\) is:",
+        opts: ["\\(\\dfrac{1}{1-a}\\)","\\(1 - a\\)","\\(1\\)","\\(0\\)"],
+        ans: 3
+      },
+      {
+        q: "The relation 'has the same father as' over the set of children is:",
+        opts: ["Only reflexive","Only symmetric","Only transitive","An equivalence relation"],
+        ans: 3
+      },
+      {
+        q: "If \\(f(x+1) = x^2 - 3x + 2\\), then \\(f(x)\\) is equal to:",
+        opts: ["\\(x^2 - 5x + 4\\)","\\(x^2 - 5x + 6\\)","\\(x^2 + 3x + 3\\)","\\(x^2 - 3x + 1\\)"],
+        ans: 1
+      },
+      {
+        q: "Let \\(A = \\mathbb{Q} \\times \\mathbb{Q}\\) and \\(*\\) be a binary operation on \\(A\\) defined by \\((a,b)*(c,d) = (ac,\\, b+ad)\\). The identity element in \\(A\\) is:",
+        opts: ["\\((0, 1)\\)","\\((0, 0)\\)","\\((1, 1)\\)","\\((1, 0)\\)"],
+        ans: 3
+      },
+      {
+        q: "On the set of positive rationals, \\(a * b = \\dfrac{2ab}{5}\\). If \\(2 * x = 3^{-1}\\), then \\(x =\\):",
+        opts: ["\\(\\dfrac{1}{6}\\)","\\(\\dfrac{5}{12}\\)","\\(\\dfrac{2}{5}\\)","\\(\\dfrac{125}{48}\\)"],
+        ans: 1
+      }
+    ]
+  },
+  {
+    name: "Relations & Functions II",
+    icon: "🔗",
+    questions: [
+      {
+        q: "Which of these is NOT a type of relation?",
+        opts: ["Reflexive","Surjective","Symmetric","Transitive"],
+        ans: 1
+      },
+      {
+        q: "A relation \\(R\\) in set \\(A\\) is called an equivalence relation if it is:",
+        opts: ["Only reflexive and symmetric","Only symmetric and transitive","Reflexive, symmetric and transitive","Only reflexive and transitive"],
+        ans: 2
+      },
+      {
+        q: "Which of the following relations is symmetric but neither reflexive nor transitive on \\(A = \\{1,2,3\\}\\)?",
+        opts: ["\\(R = \\{(1,2),(1,3),(1,4)\\}\\)","\\(R = \\{(1,2),(2,1)\\}\\)","\\(R = \\{(1,1),(2,2),(3,3)\\}\\)","\\(R = \\{(1,2),(2,3),(1,3)\\}\\)"],
+        ans: 1
+      },
+      {
+        q: "The function \\(f: A \\to B\\) defined by \\(f(x) = 4x + 7,\\; x \\in \\mathbb{R}\\) is:",
+        opts: ["One-one","Many-one","Odd","Even"],
+        ans: 0
+      },
+      {
+        q: "The smallest integer function \\(f(x) = [x]\\) is:",
+        opts: ["One-one","Many-one","Both one-one and many-one","None of these"],
+        ans: 1
+      },
+      {
+        q: "If \\(f(x_1) = f(x_2) \\Rightarrow x_1 = x_2\\;\\forall\\,x_1, x_2 \\in A\\), then \\(f: A \\to B\\) is:",
+        opts: ["One-one","One-one onto","Onto","Many-one"],
+        ans: 0
+      },
+      {
+        q: "Let \\(T\\) be the set of all triangles in a plane and \\(R\\) be defined as \\(a\\,R\\,b\\) if \\(a\\) is congruent to \\(b\\). Then \\(R\\) is:",
+        opts: ["Reflexive only","Symmetric only","Equivalence relation","Transitive only"],
+        ans: 2
+      },
+      {
+        q: "The function \\(f: \\mathbb{R} \\to \\mathbb{R}\\) defined by \\(f(x) = 3 - 4x\\) is:",
+        opts: ["Onto","Not onto","Not one-one","None of these"],
+        ans: 0
+      },
+      {
+        q: "If \\(F: \\mathbb{R} \\to \\mathbb{R}\\) such that \\(f(x) = 5x + 4\\), then \\(f^{-1}(x)\\) equals:",
+        opts: ["\\(\\dfrac{x-5}{4}\\)","\\(\\dfrac{x-y}{5}\\)","\\(\\dfrac{x-4}{5}\\)","\\(\\dfrac{x}{4} - 5\\)"],
+        ans: 2
+      },
+      {
+        q: "What type of relation is \\(R = \\{(1,3),(4,2),(2,4),(2,3),(3,1)\\}\\) on \\(A = \\{1,2,3,4\\}\\)?",
+        opts: ["Reflexive","Transitive","Symmetric","None of these"],
+        ans: 3
+      }
+    ]
+  },
+  {
+    name: "Relations & Functions III",
+    icon: "🧮",
+    questions: [
+      {
+        q: "The number of bijective functions from set \\(A\\) to itself when \\(A\\) contains 106 elements is:",
+        opts: ["\\(106\\)","\\((106)^2\\)","\\(106!\\)","\\(2^{106}\\)"],
+        ans: 2
+      },
+      {
+        q: "If the domain of \\(f(x) = x^2 - 6x + 7\\) is \\((-\\infty, \\infty)\\), the range is:",
+        opts: ["\\((-\\infty,\\infty)\\)","\\([-2,\\infty)\\)","\\((-2,3)\\)","\\((-\\infty,-2)\\)"],
+        ans: 1
+      },
+      {
+        q: "Let \\(A = \\{x : -1 \\leq x \\leq 1\\}\\) and \\(f: A \\to A\\) defined by \\(f(x) = x|x|\\). Then \\(f\\) is:",
+        opts: ["A bijection","Injective but not surjective","Surjective but not injective","Neither injective nor surjective"],
+        ans: 0
+      },
+      {
+        q: "A relation \\(R\\) on set \\(N\\) defined by \\(n\\,R\\,m\\) if \\(n\\) divides \\(m\\). Then \\(R\\) is:",
+        opts: ["Reflexive, symmetric, transitive","Reflexive and transitive but not symmetric","Reflexive and symmetric but not transitive","Symmetric and transitive but not reflexive"],
+        ans: 1
+      },
+      {
+        q: "The relation \\(R\\) in \\(\\mathbb{R}\\) defined as \\(R = \\{(a,b) : a \\leq b^2\\}\\) is:",
+        opts: ["Reflexive","Symmetric","Transitive","None of these"],
+        ans: 3
+      },
+      {
+        q: "If \\(f: \\mathbb{R} \\to \\mathbb{R}\\) is defined by \\(f(x) = x^2 - 3x + 2\\), find \\(f(f(x))\\) at \\(x = 1\\):",
+        opts: ["\\(0\\)","\\(2\\)","\\(6\\)","\\(-1\\)"],
+        ans: 0
+      },
+      {
+        q: "Let \\(*\\) be defined on \\(\\mathbb{Z}\\) by \\(a * b = a + b - 4\\). The identity element is:",
+        opts: ["\\(-4\\)","\\(0\\)","\\(4\\)","\\(8\\)"],
+        ans: 2
+      },
+      {
+        q: "The inverse of the function \\(f(x) = \\dfrac{x-1}{x+1}\\) is:",
+        opts: ["\\(\\dfrac{1+x}{1-x}\\)","\\(\\dfrac{x+1}{x-1}\\)","\\(\\dfrac{1-x}{1+x}\\)","\\(x\\)"],
+        ans: 0
+      },
+      {
+        q: "If \\(A = \\{1,2,3\\}\\), how many reflexive relations can be defined on \\(A\\)?",
+        opts: ["\\(64\\)","\\(8\\)","\\(512\\)","\\(256\\)"],
+        ans: 0
+      },
+      {
+        q: "A function \\(f: X \\to Y\\) is onto (surjective) if:",
+        opts: ["Every \\(x\\) maps to unique \\(y\\)","Every \\(y \\in Y\\) has at least one pre-image","\\(f\\) is both one-one and onto","None of these"],
+        ans: 1
+      }
+    ]
+  },
+  {
+    name: "Relations & Functions IV",
+    icon: "📊",
+    questions: [
+      {
+        q: "If \\(f(x) = \\sin x\\) and \\(g(x) = x^2\\), then \\(f \\circ g(x)\\) is:",
+        opts: ["\\(\\sin(x^2)\\)","\\(\\sin^2 x\\)","\\(x^2 \\sin x\\)","\\(\\sin x + x^2\\)"],
+        ans: 0
+      },
+      {
+        q: "Let \\(f: \\{1,3,4\\} \\to \\{1,2,5\\}\\) and \\(g: \\{1,2,5\\} \\to \\{1,3\\}\\). Then \\(g \\circ f\\) is a function from:",
+        opts: ["\\(\\{1,2,5\\}\\) to \\(\\{1,3,4\\}\\)","\\(\\{1,3,4\\}\\) to \\(\\{1,3\\}\\)","\\(\\{1,3\\}\\) to \\(\\{1,3,4\\}\\)","\\(\\{1,2,5\\}\\) to \\(\\{1,3\\}\\)"],
+        ans: 1
+      },
+      {
+        q: "If \\(f: \\mathbb{R} \\to \\mathbb{R}\\) and \\(g: \\mathbb{R} \\to \\mathbb{R}\\) are bijective, then \\((g \\circ f)^{-1}\\) equals:",
+        opts: ["\\(g^{-1} \\circ f^{-1}\\)","\\(f^{-1} \\circ g^{-1}\\)","\\(f \\circ g\\)","\\(g \\circ f\\)"],
+        ans: 1
+      },
+      {
+        q: "The binary operation \\(*: \\mathbb{R} \\times \\mathbb{R} \\to \\mathbb{R}\\) defined as \\(a * b = 2a + b\\) is:",
+        opts: ["Commutative","Associative","Both commutative and associative","Neither commutative nor associative"],
+        ans: 3
+      },
+      {
+        q: "Which of the following is a bijective function from \\(\\mathbb{R}\\) to \\(\\mathbb{R}\\)?",
+        opts: ["\\(f(x) = x^2\\)","\\(f(x) = |x|\\)","\\(f(x) = 2x + 1\\)","\\(f(x) = x^2 - x\\)"],
+        ans: 2
+      },
+      {
+        q: "The relation \\(R\\) on \\(\\mathbb{Z}\\) defined by \\((a,b) \\in R \\Leftrightarrow (a-b)\\) is divisible by 5 is:",
+        opts: ["Reflexive and symmetric only","Symmetric and transitive only","Equivalence relation","Not reflexive"],
+        ans: 2
+      },
+      {
+        q: "If \\(f: \\mathbb{R} \\to \\mathbb{R}\\) defined by \\(f(x) = \\dfrac{3x+2}{5}\\), then \\(f^{-1}(x) =\\):",
+        opts: ["\\(\\dfrac{5x+2}{3}\\)","\\(\\dfrac{5x-2}{3}\\)","\\(\\dfrac{3x-2}{5}\\)","\\(\\dfrac{5x}{3} + 2\\)"],
+        ans: 1
+      },
+      {
+        q: "If \\(n(A) = 4\\) and \\(n(B) = 2\\), the number of onto functions from \\(A\\) to \\(B\\) is:",
+        opts: ["\\(14\\)","\\(16\\)","\\(8\\)","\\(12\\)"],
+        ans: 0
+      },
+      {
+        q: "A function \\(f\\) is invertible if and only if \\(f\\) is:",
+        opts: ["Only one-one","Only onto","Bijective","Surjective"],
+        ans: 2
+      },
+      {
+        q: "Let \\(*\\) be defined on \\(\\mathbb{Q}^+\\) by \\(a * b = \\dfrac{a+b}{2}\\). Then \\(*\\) is:",
+        opts: ["Associative but not commutative","Commutative but not associative","Both commutative and associative","Neither commutative nor associative"],
+        ans: 1
+      }
+    ]
+  },
+  {
+    name: "Relations & Functions V",
+    icon: "⚡",
+    questions: [
+      {
+        q: "If \\(f(x) = \\dfrac{x+1}{x-1}\\) for all \\(x \\neq 1\\), then \\(f(f(f(2)))\\) equals:",
+        opts: ["\\(2\\)","\\(3\\)","\\(\\dfrac{1}{2}\\)","\\(1\\)"],
+        ans: 1
+      },
+      {
+        q: "The maximum number of equivalence relations on \\(A = \\{1,2,3\\}\\) is:",
+        opts: ["\\(2\\)","\\(3\\)","\\(4\\)","\\(5\\)"],
+        ans: 3
+      },
+      {
+        q: "Let \\(f: \\mathbb{R} \\to \\mathbb{R}\\) be defined by \\(f(x) = \\dfrac{1}{x}\\). Then \\(f\\) is:",
+        opts: ["One-one","Onto","Bijective","Neither one-one nor onto"],
+        ans: 3
+      },
+      {
+        q: "The function \\(f: [0,\\infty) \\to [0,\\infty)\\) defined by \\(f(x) = \\dfrac{x}{1+x}\\) is:",
+        opts: ["Both one-one and onto","One-one but not onto","Onto but not one-one","Neither one-one nor onto"],
+        ans: 1
+      },
+      {
+        q: "The number of all one-one functions from \\(A = \\{1,2,3\\}\\) to itself is:",
+        opts: ["\\(2\\)","\\(6\\)","\\(3\\)","\\(9\\)"],
+        ans: 1
+      },
+      {
+        q: "Let \\(R\\) be a relation on \\(\\mathbb{N}\\) defined by \\(R = \\{(a,b) : a = b^2,\\; b \\in \\mathbb{N}\\}\\). Is \\(R\\) reflexive?",
+        opts: ["Yes, always","No, since \\(2 \\neq 2^2\\)","Yes, since \\(1 = 1^2\\)","Cannot be determined"],
+        ans: 1
+      },
+      {
+        q: "If \\(f: \\mathbb{R} \\to \\mathbb{R}\\) is given by \\(f(x) = (3 - x^3)^{1/3}\\), then \\(f(f(x))\\) is:",
+        opts: ["\\(x^{1/3}\\)","\\(x\\)","\\(x^3\\)","\\((3-x)^3\\)"],
+        ans: 1
+      },
+      {
+        q: "If \\(f: A \\to B\\) is a bijection, then \\(f^{-1} \\circ f\\) equals:",
+        opts: ["\\(f\\)","\\(f^{-1}\\)","\\(I_A\\) (identity on \\(A\\))","\\(I_B\\) (identity on \\(B\\))"],
+        ans: 2
+      },
+      {
+        q: "The relation \\(R\\) in the set \\(\\{1,2,3,4,5,6\\}\\) defined as \\(R = \\{(a,b): b = a+1\\}\\) is:",
+        opts: ["Reflexive and transitive","Symmetric","Neither reflexive, nor symmetric, nor transitive","Equivalence"],
+        ans: 2
+      },
+      {
+        q: "If \\(f(x) = \\dfrac{4x+3}{6x-4},\\; x \\neq \\dfrac{2}{3}\\), show that \\(f(f(x)) =\\):",
+        opts: ["\\(2x\\)","\\(\\dfrac{1}{x}\\)","\\(x\\)","\\(f^{-1}(x)\\)"],
+        ans: 2
+      }
+    ]
+  }
+];
+
+/* ══ CONFIG ══ */
+const TIME_LIMIT = 600; // 10 minutes in seconds
+const PASS = 10;        // out of 15 total stars
+let scores = [0, 0, 0, 0, 0];
+let currentTest = 0, currentQ = 0, correct = 0;
+let startTime = 0, elapsed = 0, timerHandle = null;
+let isLight = false;
+
+function toggleTheme() {
+  isLight = !isLight;
+  document.body.className = isLight ? 'hub-light' : 'hub-dark';
+  document.getElementById('toggle-icon').textContent = isLight ? '🌙' : '☀️';
+  document.getElementById('toggle-label').textContent = isLight ? 'Dark' : 'Light';
+}
+
+function totalStars() { return scores.reduce((a, b) => a + b, 0); }
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function fmtTime(sec) {
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return m + 'min ' + (s < 10 ? '0' : '') + s + 's';
+}
+
+/* Star logic based on correct answers:
+   >= 8 correct  → 3 stars
+   6–7 correct   → 2 stars
+   3–5 correct   → 1 star
+   0–2 correct   → 0 stars
+*/
+function calcStars(correctCount) {
+  if (correctCount >= 8) return 3;
+  if (correctCount >= 6) return 2;
+  if (correctCount >= 3) return 1;
+  return 0;
+}
+
+function renderHub() {
+  const total = totalStars();
+  const pct = Math.min(100, (total / 15) * 100);
+  document.getElementById('hub-star-num').textContent = total;
+  document.getElementById('hub-track-fill').style.width = pct + '%';
+  const hint = document.getElementById('hub-progress-hint');
+  const need = PASS - total;
+  if (need <= 0) {
+    hint.textContent = '🎉 You have enough stars! Tap to keep improving.';
+    hint.className = 'progress-hint good';
+  } else {
+    hint.textContent = `Need ${need} more star${need === 1 ? '' : 's'} to advance`;
+    hint.className = 'progress-hint';
+  }
+
+  const list = document.getElementById('tests-list');
+  list.innerHTML = '';
+  TESTS.forEach((t, i) => {
+    const s = scores[i];
+    const isWarn = (s === 1); // 1-star warning
+    const card = document.createElement('div');
+
+    let cardClass = 'test-card';
+    if (s === 3) cardClass += ' gold-card';
+    else if (s === 1) cardClass += ' warn-card has-score';
+    else if (s === 2) cardClass += ' has-score done-card';
+    else if (s === 0 && false) {} // no extra class for unplayed
+
+    card.className = cardClass;
+
+    let btnCls, btnTxt;
+    if (s === 0)      { btnCls = 'chip chip-play'; btnTxt = '▶ Play'; }
+    else if (s === 1) { btnCls = 'chip chip-warn'; btnTxt = '⚠️ Retry'; }
+    else if (s === 2) { btnCls = 'chip chip-retry'; btnTxt = '🔄 Retry'; }
+    else              { btnCls = 'chip chip-done'; btnTxt = '✅ Done'; }
+
+    const warnBadge = isWarn
+      ? `<div class="warn-badge">⚠️ Needs Improvement — Retry!</div>`
+      : '';
+
+    card.innerHTML = `
+      <div class="test-icon">${t.icon}</div>
+      <div class="test-info">
+        <div class="test-num">TEST ${i + 1}</div>
+        <div class="test-name">${t.name}</div>
+        <div class="mini-stars">${[1, 2, 3].map(n =>
+          `<span class="ms">${n <= s ? '⭐' : '<span style="opacity:0.18;font-size:12px">⭐</span>'}</span>`
+        ).join('')}</div>
+        ${warnBadge}
+      </div>
+      <div class="test-action">
+        <button class="${btnCls}" onclick="startTest(${i})"${s === 3 ? ' disabled' : ''}>${btnTxt}</button>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+function startTest(idx) {
+  currentTest = idx; currentQ = 0; correct = 0;
+  startTime = Date.now(); elapsed = 0;
+  clearInterval(timerHandle);
+  document.getElementById('qz-title').textContent = 'Test ' + (idx + 1);
+  document.getElementById('qz-sub').textContent = TESTS[idx].name;
+  buildPills(); renderQuestion(); startTimer();
+  showScreen('quiz-screen');
+}
+
+function buildPills() {
+  const c = document.getElementById('qz-pills'); c.innerHTML = '';
+  TESTS[currentTest].questions.forEach((_, i) => {
+    const p = document.createElement('div');
+    p.className = 'pill' + (i === 0 ? ' active' : ''); p.id = 'pill-' + i;
+    c.appendChild(p);
+  });
+}
+
+function renderQuestion() {
+  const q = TESTS[currentTest].questions[currentQ];
+  const tot = TESTS[currentTest].questions.length;
+  document.getElementById('q-label').textContent = `QUESTION ${currentQ + 1} OF ${tot}`;
+  document.getElementById('q-text').innerHTML = q.q;
+  const ol = document.getElementById('options-list'); ol.innerHTML = '';
+  ['A', 'B', 'C', 'D'].forEach((l, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.innerHTML = `<span class="opt-letter">${l}</span><span class="opt-text">${q.opts[i]}</span>`;
+    btn.onclick = () => selectAnswer(i);
+    ol.appendChild(btn);
+  });
+  const nb = document.getElementById('qz-next');
+  nb.classList.remove('show');
+  nb.textContent = currentQ < tot - 1 ? 'Next Question →' : 'See Results →';
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([document.getElementById('q-text'), ol]).catch(() => {});
+  }
+}
+
+function selectAnswer(chosen) {
+  const q = TESTS[currentTest].questions[currentQ];
+  const btns = document.querySelectorAll('.opt-btn');
+  btns.forEach(b => b.disabled = true);
+  btns[chosen].classList.add(chosen === q.ans ? 'correct' : 'wrong');
+  if (chosen !== q.ans) btns[q.ans].classList.add('correct');
+  if (chosen === q.ans) correct++;
+  const pill = document.getElementById('pill-' + currentQ);
+  if (pill) { pill.classList.remove('active'); pill.classList.add(chosen === q.ans ? 'correct' : 'wrong'); }
+  document.getElementById('qz-next').classList.add('show');
+}
+
+function nextQuestion() {
+  currentQ++;
+  if (currentQ >= TESTS[currentTest].questions.length) { endTest(); return; }
+  const p = document.getElementById('pill-' + currentQ);
+  if (p) p.classList.add('active');
+  renderQuestion();
+}
+
+function startTimer() {
+  updateTimer();
+  timerHandle = setInterval(() => {
+    elapsed = Math.floor((Date.now() - startTime) / 1000);
+    if (elapsed >= TIME_LIMIT) { clearInterval(timerHandle); endTest(); return; }
+    updateTimer();
+  }, 500);
+}
+
+function updateTimer() {
+  const rem = Math.max(0, TIME_LIMIT - elapsed);
+  const m = Math.floor(rem / 60), s = rem % 60;
+  document.getElementById('timer-val').textContent = m + ':' + (s < 10 ? '0' : '') + s;
+  const circ = document.getElementById('timer-circle');
+  circ.style.strokeDashoffset = 138.2 * (1 - rem / TIME_LIMIT);
+  circ.className = 'timer-circle' + (rem < 120 ? ' danger' : rem < 300 ? ' warn' : '');
+}
+
+function endTest() {
+  clearInterval(timerHandle);
+  elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const stars = calcStars(correct);
+  scores[currentTest] = Math.max(scores[currentTest], stars);
+  const tot = TESTS[currentTest].questions.length;
+
+  // Stars display
+  const starsEl = document.getElementById('res-stars');
+  starsEl.innerHTML = '';
+  [1, 2, 3].forEach(n => {
+    const sp = document.createElement('span');
+    sp.className = 'big-star' + (n > stars ? ' dim' : '');
+    sp.textContent = '⭐';
+    starsEl.appendChild(sp);
+  });
+
+  const verdicts = ['Keep trying! 😤', 'Keep pushing! 💪', 'Well played! 👏', 'Outstanding! 🎯'];
+  document.getElementById('res-verdict').textContent = verdicts[stars];
+  document.getElementById('res-time').textContent = 'Completed in ' + fmtTime(Math.min(elapsed, TIME_LIMIT));
+  document.getElementById('res-correct').textContent = correct + ' / ' + tot;
+  document.getElementById('res-earned').textContent = stars > 0
+    ? '⭐'.repeat(stars) + ` (${stars} star${stars > 1 ? 's' : ''})`
+    : '✗ (0 stars)';
+  document.getElementById('res-total').textContent = totalStars() + ' / 15';
+
+  const need = PASS - totalStars();
+  document.getElementById('res-tip').textContent = need <= 0
+    ? '🏆 Ready to advance!'
+    : need + ' more star' + (need === 1 ? '' : 's') + ' needed';
+
+  // Warning box
+  const warnBox = document.getElementById('res-warn-box');
+  const warnMsg = document.getElementById('res-warn-msg');
+  if (stars === 1) {
+    warnBox.style.display = 'flex';
+    warnMsg.textContent = '⚠️ You scored only 1 star — this test needs more practice! Please retry it to improve your score.';
+  } else if (stars === 0) {
+    warnBox.style.display = 'flex';
+    warnMsg.textContent = '❌ You scored 0 stars — you got fewer than 3 correct. Please study this topic and retry!';
+  } else {
+    warnBox.style.display = 'none';
+  }
+
+  showScreen('result-screen');
+  if (stars === 3) spawnConfetti();
+}
+
+function spawnConfetti() {
+  const colors = ['#27ae60', '#f5c518', '#e74c3c', '#3498db', '#9b59b6', '#e67e22'];
+  for (let i = 0; i < 42; i++) {
+    const el = document.createElement('div');
+    const rot = Math.random() * 720;
+    const s = document.createElement('style');
+    s.textContent = `@keyframes fall${i}{to{top:105vh;transform:rotate(${rot}deg);opacity:0}}`;
+    document.head.appendChild(s);
+    el.className = 'confetti';
+    el.style.cssText = `left:${Math.random() * 100}vw;top:-10px;width:${6 + Math.random() * 6}px;height:${6 + Math.random() * 6}px;background:${colors[Math.floor(Math.random() * colors.length)]};border-radius:${Math.random() > .5 ? '50%' : '2px'};animation:fall${i} ${1.5 + Math.random() * 2}s ease forwards;animation-delay:${Math.random() * 0.8}s;`;
+    document.body.appendChild(el);
+    el.addEventListener('animationend', () => { el.remove(); s.remove(); });
+  }
+}
+
+function retryTest() { startTest(currentTest); }
+function goHub() {
+  if (totalStars() >= PASS) { showScreen('levelup-screen'); return; }
+  renderHub(); showScreen('hub-screen');
+}
+function confirmExit() { clearInterval(timerHandle); renderHub(); showScreen('hub-screen'); }
+
+renderHub();
+</script>
+</body>
+</html>
